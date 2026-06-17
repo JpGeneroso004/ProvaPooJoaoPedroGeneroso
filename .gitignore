@@ -1,0 +1,5 @@
+﻿db.sqlite3
+ erros.log
+__pycache__/
+*.pyc
+venv/
