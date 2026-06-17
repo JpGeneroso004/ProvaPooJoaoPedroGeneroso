@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}Eventos{% endblock %}
+{% block nav_eventos %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Eventos</h1>
+    <p class="page-sub">Todos os eventos cadastrados no sistema</p>
+  </div>
+  <a href="{% url 'eventos:novo' %}" class="btn btn-primary">+ Novo Evento</a>
+</div>
+
+<!-- Filtros -->
+<div class="filter-bar">
+  <form method="get" class="filter-form">
+    <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nome, cliente ou local..." class="form-control search-input">
+    <select name="status" class="form-control">
+      <option value="">Todos os Status</option>
+      <option value="agendado" {% if status == 'agendado' %}selected{% endif %}>Agendado</option>
+      <option value="em_andamento" {% if status == 'em_andamento' %}selected{% endif %}>Em Andamento</option>
+      <option value="concluido" {% if status == 'concluido' %}selected{% endif %}>Concluído</option>
+      <option value="cancelado" {% if status == 'cancelado' %}selected{% endif %}>Cancelado</option>
+    </select>
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+    {% if q or status %}<a href="{% url 'eventos:lista' %}" class="btn btn-outline">Limpar</a>{% endif %}
+  </form>
+</div>
+
+{% if eventos %}
+<div class="table-wrapper">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Evento</th>
+        <th>Cliente</th>
+        <th>Local / Cidade</th>
+        <th>Início</th>
+        <th>Fim</th>
+        <th>Tendas</th>
+        <th>Placas</th>
+        <th>Status</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for evento in eventos %}
+      <tr>
+        <td><a href="{% url 'eventos:detalhe' evento.pk %}" class="table-link">{{ evento.nome }}</a></td>
+        <td>{{ evento.cliente }}</td>
+        <td>{{ evento.cidade }}</td>
+        <td>{{ evento.data_inicio|date:"d/m/Y" }}</td>
+        <td>{{ evento.data_fim|date:"d/m/Y" }}</td>
+        <td class="text-center">{{ evento.total_tendas }}</td>
+        <td class="text-center">{{ evento.total_placas }}</td>
+        <td><span class="badge {{ evento.get_status_class }}">{{ evento.get_status_display }}</span></td>
+        <td>
+          <div class="action-buttons">
+            <a href="{% url 'eventos:detalhe' evento.pk %}" class="btn btn-sm">Ver</a>
+            <a href="{% url 'eventos:editar' evento.pk %}" class="btn btn-sm btn-outline">Editar</a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">🔍</div>
+  <h3>Nenhum evento encontrado</h3>
+  <p>{% if q or status %}Tente ajustar os filtros de busca.{% else %}Crie o primeiro evento da Art.Tendas!{% endif %}</p>
+  {% if not q and not status %}
+  <a href="{% url 'eventos:novo' %}" class="btn btn-primary">+ Criar Evento</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

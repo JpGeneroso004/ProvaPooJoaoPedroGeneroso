@@ -1,0 +1,60 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Art.Tendas{% endblock %} | Sistema de Gestão</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;900&family=Barlow+Condensed:wght@700;900&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="{% url 'eventos:dashboard' %}" class="navbar-brand">
+    <img src="{% static 'img/logo.png' %}" alt="Art.Tendas" class="navbar-logo">
+    <div class="navbar-brand-text">
+      <span class="brand-art">ART.</span><span class="brand-tendas">TENDAS</span>
+      <small>Sistema de Gestão</small>
+    </div>
+  </a>
+  <ul class="navbar-menu">
+    <li><a href="{% url 'eventos:dashboard' %}" class="nav-link {% block nav_dashboard %}{% endblock %}">Início</a></li>
+    <li><a href="{% url 'eventos:lista' %}" class="nav-link {% block nav_eventos %}{% endblock %}">Eventos</a></li>
+    <li><a href="{% url 'inventario:inventario' %}" class="nav-link {% block nav_inventario %}{% endblock %}">Inventário</a></li>
+    <li><a href="{% url 'eventos:novo' %}" class="btn-nav">+ Novo Evento</a></li>
+  </ul>
+  <button class="navbar-toggle" onclick="document.querySelector('.navbar-menu').classList.toggle('open')">☰</button>
+</nav>
+
+{% if messages %}
+<div class="messages-container">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags }}">
+    {{ message }}
+    <button onclick="this.parentElement.remove()">×</button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<main class="main-content">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <img src="{% static 'img/logo.png' %}" alt="Art.Tendas" class="footer-logo">
+    <div>
+      <p><strong>Art.Tendas</strong> — Estruturas para Eventos</p>
+      <p>Tendas 3x3 a 10x10 · Palcos e Pisos · Formosa, GO</p>
+    </div>
+  </div>
+</footer>
+
+<script src="{% static 'js/main.js' %}"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

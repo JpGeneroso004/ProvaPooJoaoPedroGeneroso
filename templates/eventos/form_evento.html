@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block nav_eventos %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <a href="{% url 'eventos:lista' %}" class="breadcrumb">← Eventos</a>
+    <h1 class="page-title">{{ titulo }}</h1>
+  </div>
+</div>
+
+<div class="form-container">
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="form-section">
+      <h2 class="form-section-title">Informações do Evento</h2>
+      <div class="form-grid">
+        <div class="form-group form-group--full">
+          <label>{{ form.nome.label }}</label>
+          {{ form.nome }}
+          {% if form.nome.errors %}<span class="form-error">{{ form.nome.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="form-group">
+          <label>{{ form.cliente.label }}</label>
+          {{ form.cliente }}
+          {% if form.cliente.errors %}<span class="form-error">{{ form.cliente.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="form-group">
+          <label>{{ form.telefone.label }}</label>
+          {{ form.telefone }}
+        </div>
+        <div class="form-group form-group--full">
+          <label>{{ form.local.label }}</label>
+          {{ form.local }}
+        </div>
+        <div class="form-group">
+          <label>{{ form.cidade.label }}</label>
+          {{ form.cidade }}
+        </div>
+        <div class="form-group">
+          <label>{{ form.status.label }}</label>
+          {{ form.status }}
+        </div>
+        <div class="form-group">
+          <label>{{ form.data_inicio.label }}</label>
+          {{ form.data_inicio }}
+          {% if form.data_inicio.errors %}<span class="form-error">{{ form.data_inicio.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="form-group">
+          <label>{{ form.data_fim.label }}</label>
+          {{ form.data_fim }}
+          {% if form.data_fim.errors %}<span class="form-error">{{ form.data_fim.errors.0 }}</span>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h2 class="form-section-title">📍 Localização (opcional)</h2>
+      <p class="form-hint">Preencha as coordenadas para exibir o evento no mapa. Você pode obter a latitude e longitude pelo Google Maps.</p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>{{ form.latitude.label }}</label>
+          {{ form.latitude }}
+        </div>
+        <div class="form-group">
+          <label>{{ form.longitude.label }}</label>
+          {{ form.longitude }}
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h2 class="form-section-title">⛺ Selecionar Tendas</h2>
+      {% if form.tendas.field.queryset.count == 0 %}
+        <p class="text-muted">Nenhuma tenda disponível no momento. <a href="{% url 'inventario:nova_tenda' %}">Cadastrar tenda →</a></p>
+      {% else %}
+      <div class="checkbox-grid">
+        {% for tenda in form.tendas %}
+        <label class="checkbox-card">
+          {{ tenda.tag }}
+          <div class="checkbox-card-info">
+            <span class="checkbox-card-name">{{ tenda.choice_label }}</span>
+          </div>
+        </label>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="form-section">
+      <h2 class="form-section-title">🎪 Palco / Piso</h2>
+      {% if form.conjuntos.field.queryset.count == 0 %}
+        <p class="text-muted">Nenhum conjunto disponível. <a href="{% url 'inventario:novo_conjunto' %}">Cadastrar conjunto →</a></p>
+      {% else %}
+      <p class="form-hint">Selecione os conjuntos de palco/piso para este evento.</p>
+      <div class="checkbox-grid">
+        {% for item in form.conjuntos %}
+        <label class="checkbox-card">
+          {{ item.tag }}
+          <div class="checkbox-card-info">
+            <span class="checkbox-card-name">{{ item.choice_label }}</span>
+          </div>
+        </label>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="form-section">
+      <h2 class="form-section-title">Observações</h2>
+      <div class="form-group">
+        {{ form.observacoes }}
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <a href="{% url 'eventos:lista' %}" class="btn btn-outline">Cancelar</a>
+      <button type="submit" class="btn btn-primary">💾 Salvar Evento</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

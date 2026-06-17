@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% block title %}Inventário{% endblock %}
+{% block nav_inventario %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Inventário</h1>
+    <p class="page-sub">Equipamentos da Art.Tendas</p>
+  </div>
+  <div class="action-buttons">
+    <a href="{% url 'inventario:nova_tenda' %}" class="btn btn-primary">+ Nova Tenda</a>
+    <a href="{% url 'inventario:novo_conjunto' %}" class="btn btn-outline">+ Novo Palco/Piso</a>
+  </div>
+</div>
+
+<!-- Resumo -->
+<div class="stats-grid" style="margin-bottom:2rem">
+  <div class="stat-card">
+    <div class="stat-icon">⛺</div>
+    <div class="stat-value">{{ tendas_disponiveis }}<span class="stat-total">/{{ total_tendas }}</span></div>
+    <div class="stat-label">Tendas Disponíveis</div>
+    <div class="stat-sub">{{ tendas_em_uso }} em uso · {{ tendas_manutencao }} em manutenção</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">🏕️</div>
+    <div class="stat-value">{{ piramisais_disponiveis }}<span class="stat-total">/{{ total_piramisais }}</span></div>
+    <div class="stat-label">Piramidais</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">🎩</div>
+    <div class="stat-value">{{ chapeu_disponiveis }}<span class="stat-total">/{{ total_chapeu }}</span></div>
+    <div class="stat-label">Chapéu de Bruxa</div>
+  </div>
+  <div class="stat-card stat-card--yellow">
+    <div class="stat-icon">🎪</div>
+    <div class="stat-value">{{ placas_disponiveis }}<span class="stat-total">/30</span></div>
+    <div class="stat-label">Placas Disponíveis</div>
+    <div class="stat-sub">{{ placas_em_uso }} em uso · {{ placas_manutencao }} em manutenção</div>
+  </div>
+</div>
+
+<!-- Tendas: painel visual -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title"><span class="accent-bar"></span>Tendas</h2>
+  </div>
+  {% if estoque_resumo %}
+  <div class="card" style="padding:2rem;margin-bottom:1rem">
+    <div class="estoque-grid">
+      {% for grupo in estoque_resumo %}
+      <div class="estoque-item">
+        <div class="estoque-tamanho">{{ grupo.tamanho }}</div>
+        <div class="estoque-tipos">
+          {% if grupo.piramisais %}
+          <div class="estoque-tipo-row">
+            <span class="estoque-tipo-label tipo-piramidal">Piramidal</span>
+            <div class="estoque-tendas">
+              {% for t in grupo.piramisais %}
+              <span class="tenda-bolha tenda-bolha--{{ t.status }}" title="{{ t.codigo }} — {{ t.get_status_display }}">{{ t.codigo }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+          {% if grupo.chapeu %}
+          <div class="estoque-tipo-row">
+            <span class="estoque-tipo-label tipo-chapeu">Chapéu de Bruxa</span>
+            <div class="estoque-tendas">
+              {% for t in grupo.chapeu %}
+              <span class="tenda-bolha tenda-bolha--{{ t.status }}" title="{{ t.codigo }} — {{ t.get_status_display }}">{{ t.codigo }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="placa-legend" style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--black-4)">
+      <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>Disponível</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--yellow)"></span>Em Uso</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span>Manutenção</span>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if tendas %}
+  <div class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr><th>Código</th><th>Tamanho</th><th>Tipo</th><th>Status</th><th>Observações</th><th>Ações</th></tr>
+      </thead>
+      <tbody>
+        {% for tenda in tendas %}
+        <tr>
+          <td><strong>{{ tenda.codigo }}</strong></td>
+          <td>{{ tenda.get_tamanho_display }}</td>
+          <td><span class="tipo-badge tipo-badge--{{ tenda.tipo }}">{{ tenda.get_tipo_display }}</span></td>
+          <td><span class="status-dot {{ tenda.get_status_class }}">{{ tenda.get_status_display }}</span></td>
+          <td class="text-muted">{{ tenda.observacoes|default:"-"|truncatechars:40 }}</td>
+          <td>
+            <div class="action-buttons">
+              <a href="{% url 'inventario:editar_tenda' tenda.pk %}" class="btn btn-sm">Editar</a>
+              <form method="post" action="{% url 'inventario:excluir_tenda' tenda.pk %}" style="display:inline"
+                    onsubmit="return confirm('Excluir {{ tenda.codigo }}?')">
+                {% csrf_token %}<button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">⛺</div>
+    <h3>Nenhuma tenda cadastrada</h3>
+    <a href="{% url 'inventario:nova_tenda' %}" class="btn btn-primary">+ Nova Tenda</a>
+  </div>
+  {% endif %}
+</section>
+
+<!-- Conjuntos de Palco/Piso -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title"><span class="accent-bar"></span>Palco / Piso</h2>
+    <a href="{% url 'inventario:novo_conjunto' %}" class="btn btn-sm btn-outline">+ Novo Conjunto</a>
+  </div>
+
+  <!-- Barra de placas -->
+  <div class="card" style="margin-bottom:1rem">
+    <p style="color:var(--gray-3);font-size:0.9rem;margin-bottom:1rem">
+      Estoque total: <strong style="color:var(--white)">30 placas</strong>.
+      Cada conjunto abaixo é um palco ou piso que usa um número específico de placas.
+    </p>
+    <div class="placas-summary-bar">
+      <div class="placas-bar-inner">
+        <div class="placas-bar-used" style="width:{% widthratio placas_em_uso 30 100 %}%">
+          {% if placas_em_uso > 0 %}{{ placas_em_uso }} em uso{% endif %}
+        </div>
+        <div class="placas-bar-manut" style="width:{% widthratio placas_manutencao 30 100 %}%">
+          {% if placas_manutencao > 0 %}{{ placas_manutencao }} manutenção{% endif %}
+        </div>
+        <div class="placas-bar-free" style="width:{% widthratio placas_disponiveis 30 100 %}%">
+          {% if placas_disponiveis > 0 %}{{ placas_disponiveis }} livres{% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="placa-legend" style="margin-top:0.75rem">
+      <span class="legend-item"><span class="legend-dot" style="background:var(--yellow)"></span>Em uso ({{ placas_em_uso }})</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span>Manutenção ({{ placas_manutencao }})</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>Disponíveis ({{ placas_disponiveis }})</span>
+    </div>
+  </div>
+
+  {% if conjuntos %}
+  <div class="cards-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">
+    {% for c in conjuntos %}
+    <div class="conjunto-card conjunto-card--{{ c.status }}">
+      <div class="conjunto-header">
+        <span class="status-dot {{ c.get_status_class }}">{{ c.get_status_display }}</span>
+      </div>
+      <div class="conjunto-nome">{{ c.nome }}</div>
+      <div class="conjunto-placas">
+        <span class="conjunto-num">{{ c.quantidade_placas }}</span>
+        <span class="conjunto-label">{% if c.quantidade_placas == 1 %}placa{% else %}placas{% endif %}</span>
+      </div>
+      {% if c.observacoes %}<p class="text-muted" style="font-size:0.8rem;margin-top:0.5rem">{{ c.observacoes|truncatechars:60 }}</p>{% endif %}
+      <div class="conjunto-actions">
+        <a href="{% url 'inventario:editar_conjunto' c.pk %}" class="btn btn-sm">Editar</a>
+        <form method="post" action="{% url 'inventario:excluir_conjunto' c.pk %}" style="display:inline"
+              onsubmit="return confirm('Excluir conjunto &quot;{{ c.nome }}&quot;?')">
+          {% csrf_token %}<button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">🎪</div>
+    <h3>Nenhum conjunto cadastrado</h3>
+    <p>Cadastre um palco ou piso com o número de placas que ele usa.</p>
+    <a href="{% url 'inventario:novo_conjunto' %}" class="btn btn-primary">+ Novo Conjunto</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

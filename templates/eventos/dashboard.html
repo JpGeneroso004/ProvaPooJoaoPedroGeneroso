@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Início{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">Sistema de Gestão</div>
+    <h1 class="hero-title">Seus eventos,<br><span class="text-yellow">sob controle.</span></h1>
+    <p class="hero-sub">Gerencie tendas, palcos e pisos com facilidade — tudo em um único lugar.</p>
+    <div class="hero-actions">
+      <a href="{% url 'eventos:novo' %}" class="btn btn-primary">+ Novo Evento</a>
+      <a href="{% url 'inventario:inventario' %}" class="btn btn-outline">Ver Inventário</a>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <img src="{% static 'img/logo.png' %}" alt="Art.Tendas" class="hero-logo">
+  </div>
+</section>
+
+<!-- Cards de Estatísticas -->
+<section class="stats-section">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">📅</div>
+      <div class="stat-value">{{ total_eventos }}</div>
+      <div class="stat-label">Total de Eventos</div>
+    </div>
+    <div class="stat-card stat-card--yellow">
+      <div class="stat-icon">⚡</div>
+      <div class="stat-value">{{ ativos }}</div>
+      <div class="stat-label">Eventos Ativos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⛺</div>
+      <div class="stat-value">{{ tendas_disponiveis }}<span class="stat-total">/{{ total_tendas }}</span></div>
+      <div class="stat-label">Tendas Disponíveis</div>
+      <div class="stat-sub">{{ tendas_em_uso }} em uso</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🎪</div>
+      <div class="stat-value">{{ placas_disponiveis }}<span class="stat-total">/30</span></div>
+      <div class="stat-label">Placas Disponíveis</div>
+      <div class="stat-sub">{{ placas_em_uso }} em uso nos eventos ativos</div>
+    </div>
+  </div>
+</section>
+
+<!-- Mapa Interativo -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title"><span class="accent-bar"></span>Mapa de Eventos</h2>
+    <p class="section-sub">Localização geográfica de todos os eventos cadastrados</p>
+  </div>
+  <div class="map-container">
+    <div id="map"></div>
+    {% if not eventos_mapa_json or eventos_mapa_json == '[]' %}
+    <div class="map-empty">
+      <p>Nenhum evento com localização cadastrada ainda.<br>
+      Adicione latitude e longitude ao criar um evento.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- Eventos em Andamento -->
+{% if em_andamento %}
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title"><span class="accent-bar accent-bar--green"></span>Em Andamento</h2>
+  </div>
+  <div class="cards-grid">
+    {% for evento in em_andamento %}
+    <a href="{% url 'eventos:detalhe' evento.pk %}" class="event-card event-card--active">
+      <div class="event-card-header">
+        <span class="badge badge-andamento">Em Andamento</span>
+        <span class="event-city">{{ evento.cidade }}</span>
+      </div>
+      <h3 class="event-name">{{ evento.nome }}</h3>
+      <p class="event-client">{{ evento.cliente }}</p>
+      <div class="event-footer">
+        <span>📅 {{ evento.data_inicio|date:"d/m" }} – {{ evento.data_fim|date:"d/m/Y" }}</span>
+        <span>⛺ {{ evento.total_tendas }} · 🎪 {{ evento.total_placas }}</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- Próximos Eventos -->
+{% if proximos %}
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title"><span class="accent-bar"></span>Próximos Eventos</h2>
+    <a href="{% url 'eventos:lista' %}" class="link-ver-todos">Ver todos →</a>
+  </div>
+  <div class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Evento</th>
+          <th>Cliente</th>
+          <th>Local</th>
+          <th>Data Início</th>
+          <th>Equipamentos</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for evento in proximos %}
+        <tr>
+          <td><strong>{{ evento.nome }}</strong></td>
+          <td>{{ evento.cliente }}</td>
+          <td>{{ evento.cidade }}</td>
+          <td>{{ evento.data_inicio|date:"d/m/Y" }}</td>
+          <td>⛺ {{ evento.total_tendas }} · 🎪 {{ evento.total_placas }}</td>
+          <td><span class="badge {{ evento.get_status_class }}">{{ evento.get_status_display }}</span></td>
+          <td><a href="{% url 'eventos:detalhe' evento.pk %}" class="btn btn-sm">Ver</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% else %}
+<section class="section">
+  <div class="empty-state">
+    <div class="empty-icon">📅</div>
+    <h3>Nenhum evento agendado</h3>
+    <p>Comece criando o primeiro evento da Art.Tendas.</p>
+    <a href="{% url 'eventos:novo' %}" class="btn btn-primary">+ Criar Evento</a>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const eventosData = {{ eventos_mapa_json|safe }};
+if (document.getElementById('map') && eventosData.length > 0) {
+  const map = L.map('map');
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+  const statusColors = {
+    'agendado': '#FFD600',
+    'em_andamento': '#00C853',
+    'concluido': '#9E9E9E',
+    'cancelado': '#F44336',
+  };
+
+  const bounds = [];
+  eventosData.forEach(ev => {
+    const color = statusColors[ev.status_key] || '#FFD600';
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="width:18px;height:18px;background:${color};border:2px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.5)"></div>`,
+      iconSize: [18, 18],
+      iconAnchor: [9, 9],
+    });
+    L.marker([ev.lat, ev.lng], {icon})
+      .addTo(map)
+      .bindPopup(`
+        <div class="map-popup">
+          <strong>${ev.nome}</strong><br>
+          👤 ${ev.cliente}<br>
+          📍 ${ev.local}<br>
+          📅 ${ev.data_inicio} → ${ev.data_fim}<br>
+          ⛺ ${ev.tendas} tendas &nbsp;·&nbsp; 🎪 ${ev.placas} placas<br>
+          <a href="${ev.url}" style="color:#FFD600">Ver detalhes →</a>
+        </div>
+      `);
+    bounds.push([ev.lat, ev.lng]);
+  });
+  if (bounds.length) map.fitBounds(bounds, {padding: [40, 40]});
+} else if (document.getElementById('map')) {
+  // Centro em Formosa GO se não há eventos
+  const map = L.map('map').setView([-15.5362, -47.3344], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ evento.nome }}{% endblock %}
+{% block nav_eventos %}active{% endblock %}
+{% block extra_head %}
+  {% if evento_mapa_json %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <a href="{% url 'eventos:lista' %}" class="breadcrumb">← Todos os Eventos</a>
+    <h1 class="page-title">{{ evento.nome }}</h1>
+    <p class="page-sub">{{ evento.local }}, {{ evento.cidade }}</p>
+  </div>
+  <div class="action-buttons">
+    <span class="badge {{ evento.get_status_class }} badge-lg">{{ evento.get_status_display }}</span>
+    <a href="{% url 'eventos:editar' evento.pk %}" class="btn btn-outline">Editar</a>
+    <a href="{% url 'eventos:excluir' evento.pk %}" class="btn btn-danger">Excluir</a>
+  </div>
+</div>
+
+<div class="detail-grid">
+  <!-- Informações -->
+  <div class="detail-main">
+    <div class="card">
+      <h2 class="card-title">Informações do Evento</h2>
+      <dl class="info-list">
+        <div class="info-row">
+          <dt>Cliente</dt>
+          <dd>{{ evento.cliente }}</dd>
+        </div>
+        {% if evento.telefone %}
+        <div class="info-row">
+          <dt>Telefone</dt>
+          <dd><a href="tel:{{ evento.telefone }}">{{ evento.telefone }}</a></dd>
+        </div>
+        {% endif %}
+        <div class="info-row">
+          <dt>Local</dt>
+          <dd>{{ evento.local }}</dd>
+        </div>
+        <div class="info-row">
+          <dt>Cidade</dt>
+          <dd>{{ evento.cidade }}</dd>
+        </div>
+        <div class="info-row">
+          <dt>Data de Início</dt>
+          <dd>{{ evento.data_inicio|date:"d \d\e F \d\e Y" }}</dd>
+        </div>
+        <div class="info-row">
+          <dt>Data de Fim</dt>
+          <dd>{{ evento.data_fim|date:"d \d\e F \d\e Y" }}</dd>
+        </div>
+        {% if evento.observacoes %}
+        <div class="info-row">
+          <dt>Observações</dt>
+          <dd>{{ evento.observacoes }}</dd>
+        </div>
+        {% endif %}
+      </dl>
+    </div>
+
+    <!-- Tendas -->
+    <div class="card">
+      <h2 class="card-title">⛺ Tendas Alocadas <span class="card-count">{{ evento.total_tendas }}</span></h2>
+      {% if evento.tendas.all %}
+      <div class="equipment-grid">
+        {% for tenda in evento.tendas.all %}
+        <div class="equipment-tag">
+          <span class="equipment-name">{{ tenda.codigo }}</span>
+          <span class="equipment-size">{{ tenda.get_tamanho_display }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-muted">Nenhuma tenda alocada.</p>
+      {% endif %}
+    </div>
+
+    <!-- Palco / Piso -->
+    <div class="card">
+      <h2 class="card-title">🎪 Palco / Piso <span class="card-count">{{ evento.total_placas }} placas</span></h2>
+      {% if evento.conjuntos.all %}
+      <div class="equipment-grid">
+        {% for c in evento.conjuntos.all %}
+        <div class="equipment-tag equipment-tag--placa">
+          <span class="equipment-name">{{ c.nome }}</span>
+          <span class="equipment-size">{{ c.quantidade_placas }} placa{{ c.quantidade_placas|pluralize }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <p class="text-muted" style="margin-top:0.75rem;font-size:0.85rem">
+        Total de {{ evento.total_placas }} placas alocadas para este evento.
+      </p>
+      {% else %}
+      <p class="text-muted">Sem palco ou piso neste evento.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Mapa lateral -->
+  <div class="detail-side">
+    {% if evento_mapa_json %}
+    <div class="card">
+      <h2 class="card-title">📍 Localização</h2>
+      <div id="map-detalhe" class="map-small"></div>
+      <p class="map-coords">{{ evento.latitude }}, {{ evento.longitude }}</p>
+    </div>
+    {% endif %}
+
+    <div class="card card--dark">
+      <h2 class="card-title">Resumo</h2>
+      <div class="summary-stats">
+        <div class="summary-item">
+          <span class="summary-value">{{ evento.total_tendas }}</span>
+          <span class="summary-label">Tendas</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-value">{{ evento.total_placas }}</span>
+          <span class="summary-label">Placas</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if evento_mapa_json %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const dados = {{ evento_mapa_json|safe }};
+if (dados.length) {
+  const ev = dados[0];
+  const map = L.map('map-detalhe').setView([ev.lat, ev.lng], 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+  const icon = L.divIcon({
+    className: '',
+    html: '<div style="width:20px;height:20px;background:#FFD600;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.5)"></div>',
+    iconSize: [20,20], iconAnchor: [10,10]
+  });
+  L.marker([ev.lat, ev.lng], {icon}).addTo(map).bindPopup(`<strong>${ev.nome}</strong>`).openPopup();
+}
+</script>
+{% endif %}
+{% endblock %}
